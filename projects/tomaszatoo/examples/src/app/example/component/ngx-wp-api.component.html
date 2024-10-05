@@ -1,0 +1,30 @@
+<h2>ngx-wp-api</h2>
+@if(siteInfo) {
+    <h3>Site Info:</h3>
+    <p>Name: {{siteInfo.name}}</p>
+    <p>Description: {{siteInfo.description}}</p>
+}
+@if(categories) {
+    <h3>Categories:</h3>
+    <small>count: {{categories.length}}</small>
+    @for(category of categories; track category.id) {
+        <h4>{{category.name}}</h4>
+        <small>Number of posts in category: {{category.count}}</small>
+    }
+}
+@if(posts) {
+    <h3>Last posts</h3>
+    <small>count: {{posts.length}}</small>
+    @for(post of posts; track post.id) {
+        <h4 [innerHTML]="post.title.rendered"></h4>
+        <small>{{post.date}}</small>
+        <!-- <p [innerHTML]="post.excerpt.rendered"></p> -->
+    }
+}
+
+@if(menus) {
+    <h3>Site menus</h3>
+    <small>count: {{menus.length}}</small>
+}
+
+
