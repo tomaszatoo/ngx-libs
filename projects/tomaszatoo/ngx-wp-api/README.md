@@ -116,4 +116,4 @@ The following methods are available in the `NgxWpApiService`:
 
 ## License
 
-This library is licensed under the MIT License.
+This library is licensed under the MIT [License](./LICENSE).
