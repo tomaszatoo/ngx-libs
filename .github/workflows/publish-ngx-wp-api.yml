@@ -28,6 +28,7 @@ jobs:
         run: ls -la dist/tomaszatoo  # Ensure the package is properly built
 
       - name: Publish to npm
-        run: cd dist/tomaszatoo/ngx-wp-api && npm publish --access public  # Adjust if needed
+        run: npm publish --access public
+        working-directory: dist/tomaszatoo/ngx-wp-api
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # Use npm token from secrets
