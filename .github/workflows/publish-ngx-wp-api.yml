@@ -28,7 +28,7 @@ jobs:
         run: ls -la dist/tomaszatoo  # Ensure the package is properly built
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --registry https://registry.npmjs.org
         working-directory: dist/tomaszatoo/ngx-wp-api
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # Use npm token from secrets
