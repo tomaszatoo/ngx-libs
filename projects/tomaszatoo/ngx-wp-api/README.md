@@ -12,31 +12,25 @@ npm install @tomaszatoo/ngx-wp-api
 
 ## Usage
 
-### Importing the Library
+### Importing the Library and configuring the API URL
 
-Import the `NgxWpApiModule` in your Angular module:
+You can configure the library by providing the WordPress with REST API URL in your app.config:
 
 ```typescript
-import { NgxWpApiModule } from '@tomaszatoo/ngx-wp-api';
+import { provideHttpClient } from '@angular/common/http';
+import { provideNgxWpApi } from '@tomaszatoo/ngx-wp-api';
+// ...
 
-@NgModule({
-  imports: [
-    NgxWpApiModule.forRoot({
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // ...
+    /* NGX-WP-API REQUIRED SETUP */
+    provideHttpClient(),
+    provideNgxWpApi({
       wpRootUrl: 'https://your-wordpress-site.com'
     })
   ]
-})
-export class AppModule {}
-```
-
-### Configuring the API URL
-
-You can configure the library by providing the WordPress REST API URL in your module:
-
-```typescript
-provideNgxWpApi({
-  wpRootUrl: 'https://your-wordpress-site.com'
-});
+};
 ```
 
 ### Authenticating Users
