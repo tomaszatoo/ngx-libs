@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "build-ngx-wp-api": "ng build --configuration production --project @tomaszatoo/ngx-wp-api",
     "test": "ng test"
   },
   "private": true,
