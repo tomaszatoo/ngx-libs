@@ -19,7 +19,7 @@ jobs:
           node-version: '20'  # Change to your required Node.js version
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build library
         run: npm run build-ngx-wp-api
@@ -32,3 +32,4 @@ jobs:
         working-directory: dist/tomaszatoo/ngx-wp-api
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # Use npm token from secrets
+          NPM_CONFIG_LOGLEVEL: verbose
