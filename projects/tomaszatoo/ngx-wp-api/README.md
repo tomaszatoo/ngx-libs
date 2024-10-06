@@ -7,7 +7,7 @@
 To install the library, use npm:
 
 ```bash
-npm install ngx-wp-api
+npm install @tomaszatoo/ngx-wp-api
 ```
 
 ## Usage
