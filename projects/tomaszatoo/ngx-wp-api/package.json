@@ -1,6 +1,11 @@
 {
   "name": "@tomaszatoo/ngx-wp-api",
   "version": "0.0.1",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomaszatoo/ngx-libs.git"
+  },
   "peerDependencies": {
     "@angular/common": "^18.2.0",
     "@angular/core": "^18.2.0"
