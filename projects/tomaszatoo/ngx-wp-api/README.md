@@ -17,12 +17,12 @@ npm install @tomaszatoo/ngx-wp-api
 Import the `NgxWpApiModule` in your Angular module:
 
 ```typescript
-import { NgxWpApiModule } from 'ngx-wp-api';
+import { NgxWpApiModule } from '@tomaszatoo/ngx-wp-api';
 
 @NgModule({
   imports: [
     NgxWpApiModule.forRoot({
-      wpApiUrl: 'https://your-wordpress-site.com'
+      wpRootUrl: 'https://your-wordpress-site.com'
     })
   ]
 })
@@ -35,7 +35,7 @@ You can configure the library by providing the WordPress REST API URL in your mo
 
 ```typescript
 provideNgxWpApi({
-  wpApiUrl: 'https://your-wordpress-site.com'
+  wpRootUrl: 'https://your-wordpress-site.com'
 });
 ```
 
@@ -44,7 +44,7 @@ provideNgxWpApi({
 To authenticate users using Basic Authentication, you can use the `authenticate` method:
 
 ```typescript
-import { NgxWpApiService } from 'ngx-wp-api';
+import { NgxWpApiService } from '@tomaszatoo/ngx-wp-api';
 
 constructor(private wpApiService: NgxWpApiService) {}
 
