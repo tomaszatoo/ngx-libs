@@ -1,6 +1,8 @@
 # ngx-wp-api
 
-`ngx-wp-api` is an Angular library that provides a convenient way to interact with the WordPress REST API v2. This library simplifies the process of retrieving and managing WordPress content, including posts, categories, tags, users, and menus, using Angular's HttpClient.
+`ngx-wp-api` is an Angular library that provides a convenient way to interact with the WordPress REST API v2. This library simplifies the process of retrieving and managing WordPress content, including **posts, categories, tags, users, and menus**, using Angular's HttpClient.
+
+> Note: To get menus, the WordPress site must have the [WP-REST-API V2 Menus](https://wordpress.org/plugins/wp-rest-api-v2-menus/) plugin installed. Otherwise you will get the 404 error.
 
 ## Installation
 
@@ -14,7 +16,7 @@ npm install @tomaszatoo/ngx-wp-api
 
 ### Importing the Library and configuring the API URL
 
-You can configure the library by providing the WordPress with REST API URL in your app.config:
+You can configure the library by providing the WordPress site URL with active REST API in your app.config:
 
 ```typescript
 import { provideHttpClient } from '@angular/common/http';
@@ -31,6 +33,25 @@ export const appConfig: ApplicationConfig = {
     })
   ]
 };
+```
+
+or in your app.module:
+
+```typescript
+import { NgxWpApiModule } from '@tomaszatoo/ngx-wp-api';
+
+@NgModule({
+  imports: [
+    // Other imports
+    NgxWpApiModule.forRoot({
+      wpRootUrl: 'https://your-wordpress-site.com',
+      // other config options
+    })
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+
 ```
 
 ### Authenticating Users
@@ -66,6 +87,7 @@ this.wpApiService.getCategories().subscribe(categories => {
 ```
 
 #### Get Menus
+> Note: To get menus, the WordPress site must have the [WP-REST-API V2 Menus](https://wordpress.org/plugins/wp-rest-api-v2-menus/) plugin installed. Otherwise you will get the 404 error.
 
 ```typescript
 this.wpApiService.getMenus().subscribe(menus => {
