@@ -4,3 +4,4 @@
 
 export * from './lib/ngx-wp-api.service';
 export * from './lib/interfaces';
+export * from './lib/ngx-wp-api.module';
