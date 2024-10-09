@@ -102,7 +102,7 @@ export class NgxWpApiService {
   }
 
   // SITE INFO
-  getSiteInfo(): Observable<any> {
+  getSiteInfo(): Observable<SiteInfo> {
     return this.read('', true);
   }
 
