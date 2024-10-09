@@ -60,6 +60,7 @@ export interface Post {
     alt_text: string; // Alt text for accessibility
     caption: { rendered: string }; // Rendered caption
     description: { rendered: string }; // Rendered description
+    media_details: { width: number, height: number, sizes: any }
   }
   
   // Interface for User
@@ -103,6 +104,7 @@ export interface Post {
     order: number; // Order in the menu
     object_id: number; // ID of the associated object (e.g., post or page)
     object: string; // Object type (e.g., 'post', 'page')
+    slug: string; // Slug of the menu item
   }
   
   // Interface for Menu
