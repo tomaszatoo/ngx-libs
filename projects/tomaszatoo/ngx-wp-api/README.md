@@ -100,32 +100,38 @@ this.wpApiService.getMenus().subscribe(menus => {
 The following methods are available in the `NgxWpApiService`:
 
 - **Post Methods**
-  - `getPosts(params?: string): Observable<any>`
+  - `getPosts(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getPost(id: number): Observable<any>`
+  > See: Post Methods [arguments](https://developer.wordpress.org/rest-api/reference/posts/#arguments)
 
 - **Category Methods**
-  - `getCategories(params?: string): Observable<any>`
+  - `getCategories(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getCategory(id: number): Observable<any>`
+  > See: Category Methods [arguments](https://developer.wordpress.org/rest-api/reference/categories/#arguments)
 
 - **Tag Methods**
-  - `getTags(params?: string): Observable<any>`
+  - `getTags(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getTag(id: number): Observable<any>`
+  > See: Tag Methods [arguments](https://developer.wordpress.org/rest-api/reference/tags/#arguments)
 
 - **Media Methods**
-  - `getMedias(params?: string): Observable<any>`
+  - `getMedias(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getMedia(id: number): Observable<any>`
+  > See: Media Methods [arguments](https://developer.wordpress.org/rest-api/reference/media/#arguments)
 
 - **User Methods**
-  - `getUsers(params?: string): Observable<any>`
+  - `getUsers(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getUser(id: number): Observable<any>`
+  > See: User Methods [arguments](https://developer.wordpress.org/rest-api/reference/users/#arguments)
 
 - **Page Methods**
-  - `getPages(params?: string): Observable<any>`
+  - `getPages(args?: string, observeResponse: boolean = false): Observable<any>`
   - `getPage(id: number): Observable<any>`
+  > See: Page Methods [arguments](https://developer.wordpress.org/rest-api/reference/pages/#arguments)
 
 - **Menu Methods**
-  - `getMenus(params?: string): Observable<any>`
-  - `getMenu(id: number): Observable<any>`
+  - `getMenus(): Observable<any>`
+  - `getMenu(idOrSlug: number | string): Observable<any>`
 
 - **Site Info**
   - `getSiteInfo(): Observable<any>`
