@@ -66,6 +66,23 @@ constructor(private wpApiService: NgxWpApiService) {}
 this.wpApiService.authenticate('your_username', 'your_password');
 ```
 
+### Available Interfaces
+
+The library has defined these interfaces:
+```typescript
+import {
+    Post,
+    Category,
+    Tag,
+    Media,
+    User,
+    Page,
+    MenuItem,
+    Menu,
+    SiteInfo
+} from '@tomaszatoo/ngx-wp-api'
+```
+
 ### Using the API
 
 You can use the library to interact with various WordPress endpoints:
@@ -98,43 +115,44 @@ this.wpApiService.getMenus().subscribe(menus => {
 ### Available Methods
 
 The following methods are available in the `NgxWpApiService`:
+> Note: If `observeResponse` is set to `true`, selected methods will return `HttpResponse` with headers. This can be useful to get specific `WordPress REST API v2` headers such as `X-WP-Total` or `X-WP-TotalPages` (see: [Pagination](https://developer.wordpress.org/rest-api/using-the-rest-api/pagination/)). If `observeResponse` is set to default `false`, all methods will only return the response `body` with appropriate objects.
 
 - **Post Methods**
-  - `getPosts(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getPost(id: number): Observable<any>`
+  - `getPosts(args?: string, observeResponse: boolean = false): Observable<Post[] | HttpResponse<any>>`
+  - `getPost(id: number): Observable<Post>`
   > See: Post Methods [arguments](https://developer.wordpress.org/rest-api/reference/posts/#arguments)
 
 - **Category Methods**
-  - `getCategories(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getCategory(id: number): Observable<any>`
+  - `getCategories(args?: string, observeResponse: boolean = false): Observable<Category[] | HttpResponse<any>>`
+  - `getCategory(id: number): Observable<Category>`
   > See: Category Methods [arguments](https://developer.wordpress.org/rest-api/reference/categories/#arguments)
 
 - **Tag Methods**
-  - `getTags(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getTag(id: number): Observable<any>`
+  - `getTags(args?: string, observeResponse: boolean = false): Observable<Tag[] | HttpResponse<any>>`
+  - `getTag(id: number): Observable<Tag>`
   > See: Tag Methods [arguments](https://developer.wordpress.org/rest-api/reference/tags/#arguments)
 
 - **Media Methods**
-  - `getMedias(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getMedia(id: number): Observable<any>`
+  - `getMedias(args?: string, observeResponse: boolean = false): Observable<Media[] | HttpResponse<any>>`
+  - `getMedia(id: number): Observable<Media>`
   > See: Media Methods [arguments](https://developer.wordpress.org/rest-api/reference/media/#arguments)
 
 - **User Methods**
-  - `getUsers(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getUser(id: number): Observable<any>`
+  - `getUsers(args?: string, observeResponse: boolean = false): Observable<User[] | HttpResponse<any>>`
+  - `getUser(id: number): Observable<User>`
   > See: User Methods [arguments](https://developer.wordpress.org/rest-api/reference/users/#arguments)
 
 - **Page Methods**
-  - `getPages(args?: string, observeResponse: boolean = false): Observable<any>`
-  - `getPage(id: number): Observable<any>`
+  - `getPages(args?: string, observeResponse: boolean = false): Observable<Page[] | HttpResponse<any>>`
+  - `getPage(id: number): Observable<Page>`
   > See: Page Methods [arguments](https://developer.wordpress.org/rest-api/reference/pages/#arguments)
 
 - **Menu Methods**
   - `getMenus(): Observable<any>`
-  - `getMenu(idOrSlug: number | string): Observable<any>`
+  - `getMenu(idOrSlug: number | string): Observable<Menu>`
 
 - **Site Info**
-  - `getSiteInfo(): Observable<any>`
+  - `getSiteInfo(): Observable<SiteInfo>`
 
 ## License
 
