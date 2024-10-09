@@ -1,5 +1,5 @@
 import { Injectable, inject, EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { NgxWpApiConfig, NGX_WP_API_CONFIG, WP_API_PATH, WP_MENUS_PATH } from './ngx-wp-api.config';
@@ -184,7 +184,7 @@ export class NgxWpApiService {
   }
 
   // Specific Endpoints for WordPress Resources
-  getCategories(args?: string, observeResponse: boolean = false): Observable<Category[]> {
+  getCategories(args?: string, observeResponse: boolean = false): Observable<Category[] | HttpResponse<any>> {
     return this.getItems('categories', args, observeResponse);
   }
 
@@ -192,7 +192,7 @@ export class NgxWpApiService {
     return this.getItem('categories', id);
   }
 
-  getPosts(args?: string, observeResponse: boolean = false): Observable<Post[]> {
+  getPosts(args?: string, observeResponse: boolean = false): Observable<Post[] | HttpResponse<any>> {
     return this.getItems('posts', args, observeResponse);
   }
 
@@ -200,7 +200,7 @@ export class NgxWpApiService {
     return this.getItem('posts', id);
   }
 
-  getTags(args?: string, observeResponse: boolean = false): Observable<Tag[]> {
+  getTags(args?: string, observeResponse: boolean = false): Observable<Tag[] | HttpResponse<any>> {
     return this.getItems('tags', args, observeResponse);
   }
 
@@ -208,7 +208,7 @@ export class NgxWpApiService {
     return this.getItem('tags', id);
   }
 
-  getMedias(args?: string, observeResponse: boolean = false): Observable<Media[]> {
+  getMedias(args?: string, observeResponse: boolean = false): Observable<Media[] | HttpResponse<any>> {
     return this.getItems('media', args, observeResponse);
   }
 
@@ -216,7 +216,7 @@ export class NgxWpApiService {
     return this.getItem('media', id);
   }
 
-  getUsers(args?: string, observeResponse: boolean = false): Observable<User[]> {
+  getUsers(args?: string, observeResponse: boolean = false): Observable<User[] | HttpResponse<any>> {
     return this.getItems('users', args, observeResponse);
   }
 
@@ -224,7 +224,7 @@ export class NgxWpApiService {
     return this.getItem('users', id);
   }
 
-  getPages(args?: string, observeResponse: boolean = false): Observable<Page[]> {
+  getPages(args?: string, observeResponse: boolean = false): Observable<Page[] | HttpResponse<any>> {
     return this.getItems('pages', args, observeResponse);
   }
 
