@@ -65,8 +65,9 @@ export class NgxWpApiService {
   }
 
   // READ
-  getItems<T>(endpoint: string, params?: string): Observable<T[]> {
-    return this.http.get<T[]>(`${this.wpApiUrl}/${endpoint}${params ? `?${params}` : ''}`, { headers: this.headers })
+  getItems<T>(endpoint: string, args?: string, observeResponse: boolean = false): Observable<T[]> {
+    const httpOptions: Object = observeResponse ? { hteaders: this.headers, observe: 'response' } : { hteaders: this.headers }
+    return this.http.get<T[]>(`${this.wpApiUrl}/${endpoint}${args ? `?${args}` : ''}`, httpOptions)
       .pipe(
         catchError(this.handleError)
       );
@@ -183,48 +184,48 @@ export class NgxWpApiService {
   }
 
   // Specific Endpoints for WordPress Resources
-  getCategories(params?: string): Observable<Category[]> {
-    return this.getItems('categories', params);
+  getCategories(args?: string, observeResponse: boolean = false): Observable<Category[]> {
+    return this.getItems('categories', args, observeResponse);
   }
 
   getCategory(id: number): Observable<Category> {
     return this.getItem('categories', id);
   }
 
-  getPosts(params?: string): Observable<Post[]> {
-    return this.getItems('posts', params);
+  getPosts(args?: string, observeResponse: boolean = false): Observable<Post[]> {
+    return this.getItems('posts', args, observeResponse);
   }
 
   getPost(id: number): Observable<Post> {
     return this.getItem('posts', id);
   }
 
-  getTags(params?: string): Observable<Tag[]> {
-    return this.getItems('tags', params);
+  getTags(args?: string, observeResponse: boolean = false): Observable<Tag[]> {
+    return this.getItems('tags', args, observeResponse);
   }
 
   getTag(id: number): Observable<Tag> {
     return this.getItem('tags', id);
   }
 
-  getMedias(params?: string): Observable<Media[]> {
-    return this.getItems('media', params);
+  getMedias(args?: string, observeResponse: boolean = false): Observable<Media[]> {
+    return this.getItems('media', args, observeResponse);
   }
 
   getMedia(id: number): Observable<Media> {
     return this.getItem('media', id);
   }
 
-  getUsers(params?: string): Observable<User[]> {
-    return this.getItems('users', params);
+  getUsers(args?: string, observeResponse: boolean = false): Observable<User[]> {
+    return this.getItems('users', args, observeResponse);
   }
 
   getUser(id: number): Observable<User> {
     return this.getItem('users', id);
   }
 
-  getPages(params?: string): Observable<Page[]> {
-    return this.getItems('pages', params);
+  getPages(args?: string, observeResponse: boolean = false): Observable<Page[]> {
+    return this.getItems('pages', args, observeResponse);
   }
 
   getPage(id: number): Observable<Page> {
