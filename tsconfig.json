@@ -4,8 +4,14 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
+      "@tomaszatoo/ngx-timer": [
+        "./dist/tomaszatoo/ngx-timer"
+      ],
       "@tomaszatoo/ngx-wp-api": [
         "./dist/tomaszatoo/ngx-wp-api"
+      ],
+      "ngx-timer": [
+        "./dist/ngx-timer"
       ]
     },
     "outDir": "./dist/out-tsc",
