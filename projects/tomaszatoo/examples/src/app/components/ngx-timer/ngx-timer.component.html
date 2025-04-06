@@ -1,0 +1,29 @@
+@if (countDownData && countDownData.valueString) {
+    <h3>Count-Down Timer Example</h3>
+    <div class="count-down-timer">
+        <label for="change-speed-count-down">Speed: 
+            <input type="number" name="change-speed-count-down" id="change-speed-count-down" value="1" (change)="changeCountDownSpeed($event)">&nbsp;
+        </label>
+        <p>
+            <span class="count-down">
+                <strong>{{countDownData.valueString}}</strong>
+            </span>&nbsp;
+            <button (click)="toggleCountDown()">pause/resume</button>
+        </p>
+    </div>
+    <br>
+}
+@if (countUpData && countUpData.valueString) {
+    <h3>Count-Up Timer Example</h3>
+    <div class="count-up-timer">
+        <label for="change-speed-count-up">Speed: 
+            <input type="number" name="change-speed-count-up" id="change-speed-count-up" value="1" (change)="changeCountUpSpeed($event)">&nbsp;
+        </label>
+        <p>
+            <span class="count-up">
+                <strong>{{countUpData.valueString}}</strong>
+            </span>&nbsp;
+            <button (click)="toggleCountUp()">pause/resume</button>
+        </p>
+    </div>
+}
