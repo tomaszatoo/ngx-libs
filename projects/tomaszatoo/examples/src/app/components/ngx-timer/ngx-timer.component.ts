@@ -43,7 +43,7 @@ export class NgxTimerComponent implements OnInit, OnDestroy {
   }
 
   private startCountDown() {
-    this.countDown.start(this.minute, 'm', 1);
+    this.countDown.start(0, this.minute, 'm', 1);
     const subscription = this.countDown.getObservable().subscribe({
       next: (data: TimerData) => {
         this.countDownData = data;
