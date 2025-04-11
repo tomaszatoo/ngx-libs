@@ -12,6 +12,9 @@ npm install @tomaszatoo/ngx-timer
 ```
 
 ---
+## 🔗 Source
+- [Angular Project](https://github.com/tomaszatoo/ngx-libs/tree/main/projects/tomaszatoo/ngx-timer)
+- [Repository](https://github.com/tomaszatoo/ngx-libs.git)
 
 ## 🚀 Features
 
