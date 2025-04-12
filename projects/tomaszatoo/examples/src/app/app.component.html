@@ -1,9 +1,7 @@
 <h1 [routerLink]="['/']">&#64;tomaszatoo/ngx-* Examples</h1>
-<p>
-    <a [routerLink]="['/ngx-wp-api']" [routerLinkActive]="['is-active']">ngx-wp-api</a>
-</p>
-<p>
-    <a routerLink="ngx-timer">ngx-timer</a>
-</p>
+
+@for (lib of libs; track lib.path) {
+    <p><a [routerLink]="lib.path" [routerLinkActive]="['is-active']">{{lib.name}}</a></p>
+}
 
 <router-outlet></router-outlet>

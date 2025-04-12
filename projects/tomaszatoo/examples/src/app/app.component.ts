@@ -10,4 +10,10 @@ import { RouterOutlet, RouterModule } from '@angular/router';
 })
 export class AppComponent {
   title = '@tomaszatoo/examples';
+
+  libs: any[] = [
+    {name: 'WP API', path: 'wp-api' },
+    {name: 'Timer', path: 'timer' },
+    {name: 'Graph', path: 'graph' }
+  ]
 }
