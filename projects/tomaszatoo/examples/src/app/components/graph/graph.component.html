@@ -1,16 +1,10 @@
-<!-- <graph-viewer
-  [animate]="true"
-  [gravity]="0.1"
-  [nodeRenderer]="renderNode"
-  [edgeRenderer]="renderEdge"
-></graph-viewer> -->
 <button (click)="toggleFullscreen()">Request Fullscreen</button>
 <graph-viewer
-    [graphData]="graphData2"
+    [graphData]="graphData"
     [animate]="true"
-    [layoutSettings]="layoutSettings2"
+    [layoutSettings]="layoutSettings"
     [fullscreen]="fullscreen"
-    [select]="selectedNode"
+    [select]="selectNode"
     (nodeClick)="log('nodeClickEvent', $event)"
     (nodeOver)="log('nodeOverEvent', $event)"
     (edgeClick)="log('edgeClick', $event)"
@@ -18,11 +12,4 @@
     (graphInitialised)="log('graph initialised', $event)"
     (onSelectionChange)="log('selection changed', $event)"
 ></graph-viewer>
-
-<!-- <graph-viewer
-    [graphData]="graphData"
-    [animate]="true"
-    [layoutSettings]="layoutSettings"
-    (nodeClick)="log('nodeClickEvent', $event)"
-></graph-viewer> -->
 
