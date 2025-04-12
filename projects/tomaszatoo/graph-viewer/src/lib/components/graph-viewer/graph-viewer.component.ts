@@ -6,36 +6,33 @@ import {
   Input,
   ViewChild,
   EventEmitter,
-  Output
+  Output,
+  OnDestroy
 } from '@angular/core';
 // uuid
 import { v4 as uuidv4 } from 'uuid';
 // pixi
 import { Application, Ticker, Container, FederatedPointerEvent } from 'pixi.js';
 import { Viewport } from 'pixi-viewport';
+// interfaces
+import {
+  GraphNodeAttributes,
+  NodePointerEvent,
+  EdgePointerEvent,
+  GraphLayoutSettings,
+  GraphVisualizerOptions
+} from '../../models/graph-types'; 
+
 // wrappers
 import { EdgeWrapper } from '../../models/edge-wrapper';
 import { NodeWrapper } from '../../models/node-wrapper';
 // graphology
 import Graph from 'graphology';
 import { singleSource } from 'graphology-shortest-path/unweighted';
-import { GraphEngineService, LayoutSettings } from '../../services/graph-engine/graph-engine.service';
+import { GraphEngineService } from '../../services/graph-engine/graph-engine.service';
 import { GraphData } from '../../models/graph-types';
 
-export interface NodePointerEvent {
-  id: string,
-  attributes: any,
-  position: {x: number, y: number},
-  event: FederatedPointerEvent
-}
 
-export interface EdgePointerEvent {
-  id: string,
-  attributes: any,
-  source: string,
-  target: string,
-  event: FederatedPointerEvent
-}
 
 @Component({
   selector: 'graph-viewer',
@@ -44,7 +41,7 @@ export interface EdgePointerEvent {
   templateUrl: './graph-viewer.component.html',
   styleUrl: './graph-viewer.component.scss'
 })
-export class GraphViewerComponent implements AfterViewInit {
+export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   // main and only container
   @ViewChild('container') containerRef!: ElementRef;
   // output emitters
@@ -54,7 +51,12 @@ export class GraphViewerComponent implements AfterViewInit {
   @Output() edgeOver: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() graphInitialised: EventEmitter<Graph> = new EventEmitter();
   @Output() onSelectionChange: EventEmitter<string[]> = new EventEmitter();
+
   // inputs
+  @Input() options: GraphVisualizerOptions = {
+    backgroundColor: 0x000000,
+    backgroundAlpha: 1.0
+  }
   @Input() set graphData(data: GraphData | Graph) {
     if (data instanceof Graph) {
       this.graph = data.copy();
@@ -63,7 +65,7 @@ export class GraphViewerComponent implements AfterViewInit {
       if (g) this.graph = g;
     }
   };
-  @Input() nodeRenderer?: (params: { node: string; attributes: any, position: any }) => NodeWrapper;
+  @Input() nodeRenderer?: (params: { node: string; attributes: GraphNodeAttributes, position: any }) => NodeWrapper;
   @Input() edgeRenderer?: (params: {
     edge: string;
     source: string;
@@ -97,7 +99,7 @@ export class GraphViewerComponent implements AfterViewInit {
   @Input() set animate(animate: boolean) {
     this._animate = animate;
   }
-  @Input() set layoutSettings(settings: LayoutSettings) {
+  @Input() set layoutSettings(settings: GraphLayoutSettings) {
     if (settings) {
       // this.graphEngine.layoutSettings = settings;
       this._layoutSettings = settings;
@@ -117,7 +119,7 @@ export class GraphViewerComponent implements AfterViewInit {
   private nodesContainer: Container = new Container();
   private _animate: boolean = false;
   private _fullscreen: boolean = false;
-  private _layoutSettings!: LayoutSettings;
+  private _layoutSettings!: GraphLayoutSettings;
   private _selection: string[] = [];
   private dragStartPos: { x: number; y: number } | null = null;
 
@@ -126,6 +128,8 @@ export class GraphViewerComponent implements AfterViewInit {
   private maxDegree: number = 0;
   private minSize = 10;
   private maxSize = 30;
+
+  private listeners: any[] = [];
 
   constructor(
     private graphEngine: GraphEngineService
@@ -148,22 +152,15 @@ export class GraphViewerComponent implements AfterViewInit {
       resizeTo: this.containerRef.nativeElement,
       // width: this.containerRef.nativeElement.getBoundingClientRect().width,
       // height: this.containerRef.nativeElement.getBoundingClientRect().height,
-      background: 0x000000,
+      background: this.options.backgroundColor,
       antialias: true,
       clearBeforeRender: true,
       resolution: window.devicePixelRatio,
       autoDensity: true,
-      // backgroundAlpha: 0.0
+      backgroundAlpha: this.options.backgroundAlpha
     }).then(() => {
       // fullscreen change
-      this.containerRef.nativeElement.addEventListener('fullscreenchange', (e: any) => {
-        console.log('FULLSCREEN CHANGED', e);
-        if (!document.fullscreenElement) {
-          this.viewport.plugins.pause('wheel');
-          this.app.resize();
-          this.viewport.resize();
-        }
-      });
+      this.containerRef.nativeElement.addEventListener('fullscreenchange', this.fullsScreenHanlder.bind(this));
       // listen to resize
       // window.addEventListener('resize', () => {
       //   if (!this.fullscreen) {
@@ -178,12 +175,12 @@ export class GraphViewerComponent implements AfterViewInit {
       //   // this.app.resizeTo = this.containerRef.nativeElement;
       //   // this.app.renderer.resize(window.innerWidth, window.innerHeight);
       // });
-      console.log('app initialised', this.app);
+      // console.log('app initialised', this.app);
       this.containerRef.nativeElement.appendChild(this.app.canvas);
       // setup viewport
       this.viewport = new Viewport({
         screenWidth: window.innerWidth,
-        screenHeight: window.innerWidth,
+        screenHeight: window.innerHeight,
         worldWidth: this.containerRef.nativeElement.getBoundingClientRect().width,
         worldHeight: this.containerRef.nativeElement.getBoundingClientRect().height,
         events: this.app.renderer.events
@@ -219,9 +216,29 @@ export class GraphViewerComponent implements AfterViewInit {
         this.graph.on('nodeAttributesUpdated', () => this.needsRender = true);
         this.renderGraph(this.graph); // move rendering here
         this.startAnimation();
+
+        // test edge select
+        // setInterval(() => {
+        //   const edges = this.graph.edges();
+        //   const randomEdge = edges[Math.floor(Math.random() * edges.length)];
+        //   this.selectEdge(randomEdge);
+        // }, 5000);
       }
       
     });
+  }
+
+  private fullsScreenHanlder(e: any): void {
+    // console.log('FULLSCREEN CHANGED', e);
+    if (!document.fullscreenElement) {
+      this.viewport.plugins.pause('wheel');
+      this.app.resize();
+      this.viewport.resize();
+    }
+  }
+
+  ngOnDestroy(): void {
+   this.containerRef.nativeElement.removeEventListener('fullscreenchange', this.fullsScreenHanlder);
   }
 
   private renderGraph(graph: Graph) {
@@ -236,18 +253,19 @@ export class GraphViewerComponent implements AfterViewInit {
     // render nodes
     graph.forEachNode((node, attributes) => {
       const pos = positions[node];
+      const attrs = attributes as GraphNodeAttributes;
       // set node size
       const nodeCount = this.graph.order;
       const edgeCount = this.graph.size;
       const scalingFactor = 1 / Math.log2(nodeCount + edgeCount + 2); // +2 to avoid div by 0
       const degree = this.degrees[node];
       const normalized = degree / this.maxDegree;
-      const size = this.minSize + (this.maxSize - this.minSize) * normalized * scalingFactor;
-      this.graph.setNodeAttribute(node, 'size', size);
+      const size = attributes && attributes['radius'] ? attributes['radius'] : this.minSize + (this.maxSize - this.minSize) * normalized * scalingFactor;
+      this.graph.setNodeAttribute(node, 'radius', size);
       // create node graphics / default or set by user
       const nodeGraphic = this.nodeRenderer
-        ? this.nodeRenderer({ node, attributes, position: pos })
-        : this.defaultNodeRenderer(node, attributes, pos);
+        ? this.nodeRenderer({ node, attributes: attrs, position: pos })
+        : this.defaultNodeRenderer(node, attrs, pos);
       this.nodesContainer.addChild(nodeGraphic);
       // add basic interactions
       this.addNodeInteractions(nodeGraphic, node, attributes, pos);
@@ -259,7 +277,7 @@ export class GraphViewerComponent implements AfterViewInit {
     graph.forEachEdge((edge, attributes, source, target) => {
       const sourcePos = positions[source];
       const targetPos = positions[target];
-      const targetSize = this.graph.getNodeAttribute(target, 'size') || 10;
+      const targetSize = this.graph.getNodeAttribute(target, 'radius') || 10;
       const edgeGraphic = this.edgeRenderer
         ? this.edgeRenderer({ edge, source, target, attributes })
         : this.defaultEdgeRenderer(edge, attributes, sourcePos, targetPos, targetSize);
@@ -316,7 +334,7 @@ export class GraphViewerComponent implements AfterViewInit {
     });    
   }
 
-  private defaultNodeRenderer(node: string, attributes: any, pos: { x: number; y: number }): NodeWrapper {
+  private defaultNodeRenderer(node: string, attributes: GraphNodeAttributes, pos: { x: number; y: number }): NodeWrapper {
     // Global scaling factor to tame large graphs
     
     const n: NodeWrapper = new NodeWrapper(
@@ -368,8 +386,13 @@ export class GraphViewerComponent implements AfterViewInit {
         position: position,
         event: e
       }
+      nodeGfx.hover = true;
       this.nodeOver.emit(nodeEvent);
     });
+
+    nodeGfx.on('pointerout', (e: FederatedPointerEvent) => {
+      nodeGfx.hover = false;
+    })
 
     // drag
     nodeGfx.on('pointerdown', (event: FederatedPointerEvent) => {
@@ -384,7 +407,7 @@ export class GraphViewerComponent implements AfterViewInit {
     // console.log('nodeGfx.selected', nodeGfx.selected);
     if (nodeGfx.selected && !this._selection.includes(node)) {
       const paths = singleSource(this.graph, node);
-      console.log(node, '-> Returning every shortest path between source & every node of the graph', paths);
+      console.warn('TODO: ', '-> Returning every shortest path between source & every node of the graph', paths);
       this._selection.push(node);
       this.onSelectionChange.emit(this._selection);
     } else {
@@ -394,6 +417,11 @@ export class GraphViewerComponent implements AfterViewInit {
         this.onSelectionChange.emit(this._selection);
       }
     }
+  }
+
+  private selectEdge(edge: string): void {
+    const edgeGfx = this.edgeGraphicsStorage[edge];
+    edgeGfx.selected = !edgeGfx.selected;
   }
 
   // dragging nodes
@@ -453,10 +481,10 @@ export class GraphViewerComponent implements AfterViewInit {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const DRAG_TRESHOLD = 5;
       if (dist < DRAG_TRESHOLD) { // its a click
-        console.log('isClick');
+        // console.log('isClick');
         return true;
       } else { // its a drag end
-        console.log('isDragEnd');
+        // console.log('isDragEnd');
         return false;
       }      
     }

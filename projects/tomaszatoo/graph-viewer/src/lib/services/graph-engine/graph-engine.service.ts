@@ -1,24 +1,12 @@
 import { Injectable } from '@angular/core';
 import Graph from 'graphology';
 import forceAtlas2 from 'graphology-layout-forceatlas2';
-import forceLayout from 'graphology-layout-force';
-import { random, circular, circlepack  } from 'graphology-layout';
+import { circlepack  } from 'graphology-layout';
 import GraphOptions from 'graphology';
-// import FA2LayoutSupervisor from 'graphology-layout-forceatlas2/worker';
-// import FA2Layout from 'graphology-layout-forceatlas2/worker';
+// interfaces
+import { GraphLayoutSettings } from '../../models/graph-types';
 
-export interface LayoutSettings {
-  adjustSizes?: boolean,
-  barnesHutOptimize?: boolean,
-  barnesHutTheta?: number,
-  edgeWeightInfluence?: number,
-  gravity?: number,
-  linLogMode?: boolean,
-  outboundAttractionDistribution?: boolean,
-  scalingRatio?: number,
-  slowDown?: number,
-  strongGravityMode?: boolean
-}
+
 
 @Injectable({
   providedIn: 'root'
@@ -49,8 +37,8 @@ export class GraphEngineService {
     return graph;
   }
 
-  initPositions(graph: Graph, settings?: LayoutSettings): Record<string, {x: number, y: number}> {
-    console.log('initPositions with settings: ', settings);
+  initPositions(graph: Graph, settings?: GraphLayoutSettings): Record<string, {x: number, y: number}> {
+    // console.log('initPositions with settings: ', settings);
     // set initial graph nodes positions
     const circularPositions = circlepack(graph, {scale: 200});
     // console.log('circular positions', circularPositions);
@@ -68,11 +56,11 @@ export class GraphEngineService {
       settings: sensibleSettings
     });    
 
-    console.log('Computed Node Positions: ', positions);
+    // console.log('Computed Node Positions: ', positions);
     return positions;
   }
 
-  positions(graph: Graph, settings?: LayoutSettings): Record<string, {x: number, y: number}> {
+  positions(graph: Graph, settings?: GraphLayoutSettings): Record<string, {x: number, y: number}> {
     const sensibleSettings = settings ? settings : forceAtlas2.inferSettings(graph);
     // console.log('sensibleSettings', sensibleSettings);
     const positions = forceAtlas2(graph, { 

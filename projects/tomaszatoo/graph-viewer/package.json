@@ -1,0 +1,17 @@
+{
+  "name": "@tomaszatoo/graph-viewer",
+  "version": "1.0.0",
+  "peerDependencies": {
+    "@angular/common": "^18.2.0",
+    "@angular/core": "^18.2.0",
+    "graphology": "^0.26.0",
+    "graphology-layout-forceatlas2": "^0.10.1",
+    "graphology-shortest-path": "^2.1.0",
+    "pixi-viewport": "^6.0.3",
+    "pixi.js": "^8.9.1"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}

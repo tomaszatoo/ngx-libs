@@ -1,14 +1,7 @@
 import { Graphics, Container, Text } from 'pixi.js';
+// models
+import { EdgePosition, GraphEdgeAttributes, GraphColors} from './graph-types';
 
-interface Point {
-    x: number,
-    y: number
-}
-
-interface EdgePosition {
-    source: Point,
-    target: Point
-}
 
 export interface EdgeWrapper {
     updatePosition?: (edgePosition: EdgePosition) => void;
@@ -16,7 +9,7 @@ export interface EdgeWrapper {
 
 export class EdgeWrapper extends Container {
 
-    private edge!: string;
+    private edgeId!: string;
     private edgePosition!: EdgePosition;
     private attributes: any = {};
     private targetSize: number = 10;
@@ -27,19 +20,42 @@ export class EdgeWrapper extends Container {
     private edgeLabel: Text = new Text();
     private selfloop: boolean = false;
 
+    private _selected: boolean = false;
+    set selected(selected: boolean) {
+        this._selected = selected;
+        if (this._selected) {
+            this.zIndex = 999999;
+        } else {
+            this.zIndex = 0;
+        }
+        this.draw();
+    }
+    get selected() { return this._selected; }
+
+    private defaultEdgeColors: GraphColors = {
+        stroke: 0x2DC9DC,
+        label: 0x2DC9DC,
+        selection: 0xffffff
+    }
+
+    private defaultEdgeAttributes: GraphEdgeAttributes = {
+        colors: this.defaultEdgeColors,
+        strokeWidth: 2
+    }
+
 
     constructor(
         edge: string,
         edgePosition: EdgePosition,
-        attributes?: any,
+        attributes?: GraphEdgeAttributes,
         targetSize?: number,
         selfloop: boolean = false
     ) {
         super();
         this.interactive = true;
-        this.edge = edge;
+        this.edgeId = edge;
         this.edgePosition = edgePosition;
-        this.attributes = attributes ? attributes : {};
+        this.attributes = this.createEdgeAttributes(attributes ? attributes : {});
         this.targetSize = targetSize ? targetSize : this.targetSize;
         this.selfloop = selfloop;
 
@@ -69,43 +85,32 @@ export class EdgeWrapper extends Container {
         this.draw();
     }
 
-    private draw(): void {
-        this.drawLine();
-        this.drawArrow();
-        if (this.attributes.label) this.drawLabel();
-        // console.log('draw edge', this.container);
-    }
-
-    // line
-    private drawLine(): void {
-        this.line.clear();
+    protected initEdgeLine(g: Graphics): void {
         if (this.selfloop) {
-            this.line.circle(this.edgePosition.target.x, this.edgePosition.target.y, this.targetSize)
+            g.circle(this.edgePosition.target.x, this.edgePosition.target.y, this.targetSize)
             .stroke({
-                color: this.attributes && this.attributes.color ? this.attributes.color : 0xffffff,
+                color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke'),
                 pixelLine: false,
-                width: this.attributes && this.attributes.width ? this. attributes.width : 1
+                width: this.attributes && this.attributes.strokeWidth ? this. attributes.strokeWidth : 1
             });
-            this.line.position.x = -this.targetSize - (this.targetSize / 3);
-            this.line.position.y = -this.targetSize;
+            g.position.x = -this.targetSize - (this.targetSize / 3);
+            g.position.y = -this.targetSize;
 
         } else {
-            this.line.moveTo(this.edgePosition.source.x, this.edgePosition.source.y)
+            g.moveTo(this.edgePosition.source.x, this.edgePosition.source.y)
             .lineTo(this.edgePosition.target.x, this.edgePosition.target.y)
             .stroke({
-              color: this.attributes && this.attributes.color ? this.attributes.color : 0xffffff,
+              color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke'),
               pixelLine: false,
-              width: this.attributes && this.attributes.width ? this. attributes.width : 1
+              width: this.attributes && this.attributes.strokeWidth ? this. attributes.strokeWidth : 1
             });
         }
-        
     }
-    // arrow
-    private drawArrow(): void {
-        this.arrow.clear();
+
+    protected initEdgeArrow(g: Graphics): void {
         // Target node's radius
         // console.log('targetSize', this.targetSize);
-        const nodeRadius = this.targetSize + 5; // 5 is half of node outline width :/
+        const nodeRadius = this.targetSize + 3.5; // 5 is half of node outline width :/
         const arrowLength = 10; // length of the arrowhead lines
         const arrowWidth = 5;   // how wide the arrowhead spreads
 
@@ -126,16 +131,16 @@ export class EdgeWrapper extends Container {
         const rightX = arrowBaseX + Math.cos(angle - Math.PI / 2) * arrowWidth;
         const rightY = arrowBaseY + Math.sin(angle - Math.PI / 2) * arrowWidth;
 
-        this.arrow.moveTo(baseX, baseY)
+        g.moveTo(baseX, baseY)
         .lineTo(leftX, leftY)
         .lineTo(rightX, rightY)
         .lineTo(baseX, baseY)
         .fill({
-         color: this.attributes && this.attributes.color ? this.attributes.color : 0xffffff
+         color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke')
          });
     }
-    // label
-    private drawLabel(): void {
+
+    protected initEdgeLabel(t: Text): void {
         // console.log('draw label?');
         // this.edgeLabel.c
         if (this.selfloop) {
@@ -143,20 +148,59 @@ export class EdgeWrapper extends Container {
         } else {
             const pos = this.getLabelPosition();
             // !!! recreating each redraw (maybe could help with blurring zooming)
-            this.edgeLabel.text = this.attributes.label;
-            this.edgeLabel.style = {
-                fill: this.attributes.color ? this.attributes.color : 0xffffff,
+            t.text = this.attributes.label;
+            t.style = {
+                fill: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('label'),
                 fontSize: 12,
                 fontFamily: 'Arial',
-                align: 'center'
+                align: 'left'
             }
-            this.edgeLabel.pivot.x = this.edgeLabel.width / 2;
-            this.edgeLabel.pivot.y = 18;
-            this.edgeLabel.x = pos.x;
-            this.edgeLabel.y = pos.y;
-            this.edgeLabel.rotation = pos.angle;
+            t.pivot.x = this.edgeLabel.width / 2;
+            t.pivot.y = 18;
+            t.x = pos.x;
+            t.y = pos.y;
+            t.rotation = pos.angle;
         }
-        
+    }
+
+    private draw(): void {
+        this.drawLine();
+        this.drawArrow();
+        if (this.attributes.label) this.drawLabel();
+        // console.log('draw edge', this.container);
+    }
+
+    // line
+    private drawLine(): void {
+        this.line.clear();
+        this.initEdgeLine(this.line);        
+    }
+    // arrow
+    private drawArrow(): void {
+        this.arrow.clear();
+        this.initEdgeArrow(this.arrow);
+    }
+    // label
+    private drawLabel(): void {
+        this.initEdgeLabel(this.edgeLabel);
+    }
+
+    private createEdgeAttributes(attributes: Partial<GraphEdgeAttributes>): GraphEdgeAttributes {
+        return {
+            ...this.defaultEdgeAttributes,
+            ...attributes,
+            colors: {
+                ...this.defaultEdgeColors,
+                ...(attributes.colors || {})
+            }
+        };
+    }
+
+    private getAttributeColor(attr: string): number {
+        if (this.attributes.colors && this.attributes.colors[attr as keyof GraphColors]) {
+            return Number(this.attributes.colors[attr as keyof GraphColors]);
+        }
+        return 0;
     }
 
 
