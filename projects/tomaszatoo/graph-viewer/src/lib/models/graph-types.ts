@@ -10,7 +10,7 @@ export interface GraphColors {
   stroke?: number,
   label?: number,
   selection?: number,
-  hover?: number
+  highlight?: number
 }
 
 export interface GraphNodeAttributes {
@@ -46,17 +46,21 @@ export interface GraphData {
 
 export interface NodePointerEvent {
   id: string,
-  attributes: any,
+  attributes: GraphNodeAttributes,
   position: {x: number, y: number},
-  event: FederatedPointerEvent
+  event: FederatedPointerEvent,
+  selected?: boolean,
+  highlighted?: boolean
 }
 
 export interface EdgePointerEvent {
   id: string,
-  attributes: any,
+  attributes: GraphEdgeAttributes,
   source: string,
   target: string,
-  event: FederatedPointerEvent
+  event: FederatedPointerEvent,
+  selected?: boolean,
+  highlighted?: boolean
 }
 
 export interface GraphLayoutSettings {
