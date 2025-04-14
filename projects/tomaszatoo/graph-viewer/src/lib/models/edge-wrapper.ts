@@ -20,22 +20,31 @@ export class EdgeWrapper extends Container {
     private edgeLabel: Text = new Text();
     private selfloop: boolean = false;
 
-    private _selected: boolean = false;
-    set selected(selected: boolean) {
-        this._selected = selected;
-        if (this._selected) {
+    // select
+    private _select: boolean = false;
+    set select(select: boolean) {
+        this._select = select;
+        if (this._select) {
             this.zIndex = 999999;
         } else {
             this.zIndex = 0;
         }
         this.draw();
     }
-    get selected() { return this._selected; }
+    get select() { return this._select; }
+    // highlight
+    private _highlight: boolean = false;
+    set highlight(highlight: boolean) {
+        this._highlight = highlight;
+        this.draw();
+    }
+    get highlight() { return this._highlight; }
 
     private defaultEdgeColors: GraphColors = {
         stroke: 0x2DC9DC,
         label: 0x2DC9DC,
-        selection: 0xffffff
+        selection: 0xffffff,
+        highlight: 0x30D973
     }
 
     private defaultEdgeAttributes: GraphEdgeAttributes = {
@@ -86,12 +95,13 @@ export class EdgeWrapper extends Container {
     }
 
     protected initEdgeLine(g: Graphics): void {
+        const strokeWidth = this.attributes && this.attributes.strokeWidth ? this. attributes.strokeWidth : 1;
         if (this.selfloop) {
             g.circle(this.edgePosition.target.x, this.edgePosition.target.y, this.targetSize)
             .stroke({
-                color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke'),
+                color: this.select ? this.getAttributeColor('selection') : (this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('stroke')),
                 pixelLine: false,
-                width: this.attributes && this.attributes.strokeWidth ? this. attributes.strokeWidth : 1
+                width: this.highlight ? (strokeWidth + (strokeWidth * .2)) : strokeWidth
             });
             g.position.x = -this.targetSize - (this.targetSize / 3);
             g.position.y = -this.targetSize;
@@ -100,9 +110,9 @@ export class EdgeWrapper extends Container {
             g.moveTo(this.edgePosition.source.x, this.edgePosition.source.y)
             .lineTo(this.edgePosition.target.x, this.edgePosition.target.y)
             .stroke({
-              color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke'),
+              color: this.select ? this.getAttributeColor('selection') : this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('stroke'),
               pixelLine: false,
-              width: this.attributes && this.attributes.strokeWidth ? this. attributes.strokeWidth : 1
+              width: this.highlight ? (strokeWidth + (strokeWidth * .2)) : strokeWidth
             });
         }
     }
@@ -111,8 +121,8 @@ export class EdgeWrapper extends Container {
         // Target node's radius
         // console.log('targetSize', this.targetSize);
         const nodeRadius = this.targetSize + 3.5; // 5 is half of node outline width :/
-        const arrowLength = 10; // length of the arrowhead lines
-        const arrowWidth = 5;   // how wide the arrowhead spreads
+        const arrowLength = this.highlight ? 15 : 10; // length of the arrowhead lines
+        const arrowWidth = this.highlight ? 7 : 5;   // how wide the arrowhead spreads
 
         const dx = this.edgePosition.target.x - this.edgePosition.source.x;
         const dy = this.edgePosition.target.y - this.edgePosition.source.y;
@@ -136,7 +146,7 @@ export class EdgeWrapper extends Container {
         .lineTo(rightX, rightY)
         .lineTo(baseX, baseY)
         .fill({
-         color: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('stroke')
+         color: this.select ? this.getAttributeColor('selection') : this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('stroke')
          });
     }
 
@@ -150,7 +160,7 @@ export class EdgeWrapper extends Container {
             // !!! recreating each redraw (maybe could help with blurring zooming)
             t.text = this.attributes.label;
             t.style = {
-                fill: this.selected ? this.getAttributeColor('selection') : this.getAttributeColor('label'),
+                fill: this.select ? this.getAttributeColor('selection') : this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('label'),
                 fontSize: 12,
                 fontFamily: 'Arial',
                 align: 'left'
