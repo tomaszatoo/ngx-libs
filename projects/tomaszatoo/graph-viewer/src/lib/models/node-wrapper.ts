@@ -13,11 +13,11 @@ export class NodeWrapper extends Container {
     private container: Container = new Container();
     private node: Graphics = new Graphics();
     private nodeLabel: Text = new Text();
-    // selected
-    private _selected: boolean = false;
-    set selected(selected: boolean) { 
-        this._selected = selected;
-        if (this._selected) {
+    // select
+    private _select: boolean = false;
+    set select(select: boolean) { 
+        this._select = select;
+        if (this._select) {
             this.zIndex = 999999;
         } else {
             this.zIndex = 0;
@@ -26,14 +26,14 @@ export class NodeWrapper extends Container {
         // this.drawLabel();
         this.draw();
     }
-    get selected() { return this._selected; }
-    // hover
-    private _hover: boolean = false;
-    set hover(hover: boolean) {
-        this._hover = hover;
+    get select() { return this._select; }
+    // highlight
+    private _highlight: boolean = false;
+    set highlight(highlight: boolean) {
+        this._highlight = highlight;
         this.draw();
     }
-    get hover() { return this._hover; }
+    get highlight() { return this._highlight; }
     
     
     protected defaultNodeColors: GraphColors = {
@@ -41,7 +41,7 @@ export class NodeWrapper extends Container {
         stroke: 0x2DC9DC,
         label: 0x2DC9DC,
         selection: 0xffffff,
-        hover: 0x30D973
+        highlight: 0x30D973
     }
 
     protected defaultNodeAttributes: GraphNodeAttributes = {
@@ -74,7 +74,7 @@ export class NodeWrapper extends Container {
         t.style = {
             fontSize: 24,
             fontFamily: 'Arial',
-            fill: this.selected ? this.getAttributeColor('selection') : (this.hover ? this.getAttributeColor('hover') : this.getAttributeColor('label')),
+            fill: this.select ? this.getAttributeColor('selection') : (this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('label')),
             align: 'center'
         }
     }
@@ -83,7 +83,7 @@ export class NodeWrapper extends Container {
         // g.clear();
         g.circle(0, 0, this.getNodeSize())
         .stroke({
-            color: this.selected ? this.getAttributeColor('selection') : (this.hover ? this.getAttributeColor('hover') : this.getAttributeColor('stroke')),
+            color: this.select ? this.getAttributeColor('selection') : (this.highlight ? this.getAttributeColor('highlight') : this.getAttributeColor('stroke')),
             width: this.attributes && this.attributes.strokeWidth ? this.attributes.strokeWidth : 10
         })
         .circle(0, 0, this.getNodeSize())
@@ -145,6 +145,7 @@ export class NodeWrapper extends Container {
     }
 
     private getNodeSize(): number {
-        return this.attributes.radius ? this.attributes.radius : 10;
+        const size = this.attributes.radius ? this.attributes.radius : 10;
+        return this.highlight ? (size + (size * .2)) : size;
     }
 }
