@@ -37,8 +37,8 @@ Can be:
 - A raw object of the form:
   ```ts
   {
-    nodes: { key: string, attributes: any }[],
-    edges: { source: string, target: string, attributes: any }[]
+    nodes: { key: string, attributes: GraphNodeAttributes }[],
+    edges: { source: string, target: string, attributes: GraphEdgeAttributes }[]
   }
   ```
 - Or a ready-to-go `Graphology.Graph` instance.
@@ -49,7 +49,7 @@ Function to customize how a node is rendered. Gets:
 {
   node: string,
   attributes: GraphNodeAttributes,
-  position: { x: number, y: number }
+  position: Point
 }
 ```
 Must return a `NodeWrapper` (your custom Pixi `Container` subclass).
@@ -80,8 +80,17 @@ Layout tuning object—passed to ForceAtlas2. Includes:
 - edgeWeightInfluence
 - etc.
 
-### `select: string`
-Pass a node ID to programmatically select it.
+### `toggleNodeSelection: string`
+Pass a node ID to programmatically toggle node selection.
+
+### `toggleEdgeSelection: string`
+Pass a edge ID to programmatically toggle edge selection.
+
+### `toggleNodeHighlight: string`
+Pass a node ID to programmatically toggle node highlight.
+
+### `toggleEdgeHighlight: string`
+Pass a edge ID to programmatically toggle edge highlight.
 
 ### `options?: GraphVisualizerOptions`
 Low-level visual config:
@@ -96,37 +105,51 @@ Low-level visual config:
 
 ## 🧯 Outputs
 
-### `nodeClick: EventEmitter<NodePointerEvent>`
+### `onNodeSelectChange: EventEmitter<NodePointerEvent>`
 ```ts
 {
   node: string,
-  attributes: any,
-  event: FederatedPointerEvent
+  attributes: GraphNodeAttributes,
+  event: FederatedPointerEvent,
+  selected: boolean
 }
 ```
 
-### `nodeOver: EventEmitter<NodePointerEvent>`
-Emitted on hover.
-
-### `edgeClick: EventEmitter<EdgePointerEvent>`
+### `onNodeHighlightChange: EventEmitter<NodePointerEvent>`
+```ts
+{
+  node: string,
+  attributes: GraphNodeAttributes,
+  event: FederatedPointerEvent,
+  highlighted: boolean
+}
+```
+### `onEdgeSelectChange: EventEmitter<EdgePointerEvent>`
 ```ts
 {
   edge: string,
-  source: string,
-  target: string,
-  attributes: any,
-  event: FederatedPointerEvent
+  attributes: GraphEdgeAttributes,
+  event: FederatedPointerEvent,
+  selected: boolean
 }
 ```
 
-### `edgeOver: EventEmitter<EdgePointerEvent>`
-Like `nodeOver` but for edges.
+### `onEdgeHighlightChange: EventEmitter<EdgePointerEvent>`
+```ts
+{
+  edge: string,
+  attributes: GraphEdgeAttributes,
+  event: FederatedPointerEvent,
+  highlighted: boolean
+}
+```
 
 ### `graphInitialised: EventEmitter<Graph>`
 Fires once the Graphology graph is built, with all nodes rendered.
 
-### `onSelectionChange: EventEmitter<string[]>`
-Returns list of selected node IDs.
+### `onDestroy: EventEmitter<boolean>`
+Fires once the GraphViewerComponent is destroyed.
+
 
 ---
 
@@ -148,9 +171,12 @@ Use it in your HTML:
   [animate]="true"
   [fullscreen]="true"
   [layoutSettings]="myLayoutSettings"
-  [select]="focusedNodeId"
-  (nodeClick)="handleNodeClick($event)"
-  (onSelectionChange)="handleSelection($event)">
+  (graphInitialised)="computeGraphTheory($event)"
+  (onNodeSelectChange)="handleNodeSelection($event)"
+  (onEdgeSelectChange)="handleEdgeSelection($event)"
+  (onNodeHighlightChange)="handleNodeSelection($event)"
+  (onEdgeHighlightChange)="handleEdgeSelection($event)"
+  (onDestroy)="clean()">
 </graph-viewer>
 ```
 
