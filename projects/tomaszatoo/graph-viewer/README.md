@@ -197,7 +197,7 @@ Use it in your HTML:
 ## 🛣️ Roadmap Ideas
 
 - [ ] Demo / Examples
-- [ ] Selecting eges 
+- [x] Selecting eges 
 - [ ] Arrowheads and directed edges
 - [ ] Cluster folding / node collapsing
 - [ ] Tooltip system with hover delay
