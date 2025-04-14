@@ -1,6 +1,6 @@
 {
   "name": "@tomaszatoo/graph-viewer",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tomaszatoo/ngx-libs.git"
@@ -11,7 +11,6 @@
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
     "graphology-layout-forceatlas2": "^0.10.1",
-    "graphology-shortest-path": "^2.1.0",
     "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.9.1",
     "uuid": "^11.1.0"

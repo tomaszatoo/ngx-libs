@@ -51,8 +51,9 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   @Output() onEdgeSelectChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() onEdgeHighlightChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() graphInitialised: EventEmitter<Graph> = new EventEmitter();
+  @Output() graphUpdated: EventEmitter<Graph> = new EventEmitter();
   @Output() onDestroy: EventEmitter<boolean> = new EventEmitter();
-  // @Output() onSelectionChange: EventEmitter<string[]> = new EventEmitter();
+  // @Output() onError: EventEmitter<Error> = new EventEmitter();
 
   // inputs
   @Input() options: GraphVisualizerOptions = {
@@ -129,6 +130,66 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     return this._animate;
   }
 
+  @Input() set addNodes(nodes: Record<string, GraphNodeAttributes> | null) {
+    if (!this.graph || !nodes) return;
+  
+    for (const [nodeKey, nodeAttrs] of Object.entries(nodes)) {
+      this.graph.addNode(nodeKey, nodeAttrs);
+    }
+  
+    this.refreshGraph(this.graph);
+  }
+  
+  @Input() set addEdges(
+    edges: ReadonlyArray<{
+      source: string;
+      target: string;
+      attributes: GraphEdgeAttributes;
+    }> | null
+  ) {
+    if (!this.graph || !edges?.length) return;
+  
+    for (const { source, target, attributes } of edges) {
+      if (this.graph.hasNode(source) && this.graph.hasNode(target)) {
+        this.graph.addEdge(source, target, attributes);
+      }
+    }
+  
+    this.refreshGraph(this.graph);
+  }
+  
+  @Input() set dropNodes(nodes: ReadonlyArray<string> | null) {
+    if (!this.graph || !nodes?.length) return;
+  
+    for (const node of nodes) {
+      if (this.graph.hasNode(node)) {
+        this.graph.dropNode(node);
+      }
+    }
+  
+    this.refreshGraph(this.graph);
+  }
+  
+  @Input() set dropEdges(edges: ReadonlyArray<string> | null) {
+    if (!this.graph || !edges?.length) return;
+  
+    for (const edge of edges) {
+      if (this.graph.hasEdge(edge)) {
+        this.graph.dropEdge(edge);
+      }
+    }
+  
+    this.refreshGraph(this.graph);
+  }
+  
+  // Optional helper method
+  private refreshGraph(graph: Graph): void {
+    this.updateGraph(graph);
+    this.graphUpdated.emit(graph);
+  }
+
+
+
   graphViewerId: string = `graph-${uuidv4()}`;
 
   private graph!: Graph | null | undefined;
@@ -147,7 +208,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   private degrees: Record<string, number> = {};
   private maxDegree: number = 0;
   private minSize = 10;
-  private maxSize = 30;
+  private maxSize = 50;
 
 
   private nodeGraphicsStorage: Record<string, NodeWrapper> = {};
@@ -265,6 +326,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     const nodeGfx = this.nodeGraphicsStorage[id];
     nodeGfx.removeAllListeners();
    }
+   if(this.graph) this.graph.clear();
    this.graph = null;
    this.edgeGraphicsStorage = {};
    this.nodeGraphicsStorage = {};
@@ -272,53 +334,80 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
    this.onDestroy.emit(true);
   }
 
-  private renderGraph(graph: Graph) {
+  private renderGraph(graph: Graph, initial: boolean = true) {
+    this.nodeGraphicsStorage = {};
+    this.edgeGraphicsStorage = {};
+    this.nodesContainer.removeChildren();
+    this.edgesContainer.removeChildren();
     // count maxDegree
+    // this.maxDegree = graph.nodes().length;
     graph.forEachNode((node) => {
       const degree = graph.degree(node); // total degree (can split in/out if needed)
       this.degrees[node] = degree;
       if (degree > this.maxDegree) this.maxDegree = degree;
     });
     // get graph initial positions
-    const positions = this.graphEngine.initPositions(graph, this._layoutSettings);
+    const positions = initial ? 
+      this.graphEngine.initPositions(graph, this._layoutSettings) :
+      this.graphEngine.positions(graph, this._layoutSettings);
     // render nodes
     graph.forEachNode((node, attributes) => {
-      const pos = positions[node];
-      const attrs = attributes as GraphNodeAttributes;
-      // set node size
-      const nodeCount = graph.order;
-      const edgeCount = graph.size;
-      const scalingFactor = 1 / Math.log2(nodeCount + edgeCount + 2); // +2 to avoid div by 0
-      const degree = this.degrees[node];
-      const normalized = degree / this.maxDegree;
-      const size = attributes && attributes['radius'] ? attributes['radius'] : this.minSize + (this.maxSize - this.minSize) * normalized * scalingFactor;
-      graph.setNodeAttribute(node, 'radius', size);
-      // create node graphics / default or set by user
-      const nodeGraphic = this.nodeRenderer
-        ? this.nodeRenderer({ node, attributes: attrs, position: pos })
-        : this.defaultNodeRenderer(node, attrs, pos);
-      this.nodesContainer.addChild(nodeGraphic);
-      // add basic interactions
-      this.addNodeInteractions(nodeGraphic, node, attributes, pos);
-    
-      // save to node storage
-      this.nodeGraphicsStorage[node] = nodeGraphic;
+      // if (!this.nodeGraphicsStorage[node])
+      this.createNodeGfx(node, attributes as GraphNodeAttributes, positions, graph);
     }); 
     // render edges
     graph.forEachEdge((edge, attributes, source, target) => {
-      const sourcePos = positions[source];
-      const targetPos = positions[target];
-      const targetSize = graph.getNodeAttribute(target, 'radius') || 10;
-      const edgeGraphic = this.edgeRenderer
-        ? this.edgeRenderer({ edge, source, target, attributes })
-        : this.defaultEdgeRenderer(edge, attributes, sourcePos, targetPos, targetSize, graph);
-      this.edgesContainer.addChild(edgeGraphic);
-      this.edgeGraphicsStorage[edge] = edgeGraphic;
-      // interaction
-      this.addEdgeInteractions(edgeGraphic, edge, attributes, source, target);
+      this.createEdgeGfx(edge, attributes, source, target, positions, graph);
     });
 
-    this.graphInitialised.emit(graph);
+    if (initial) this.graphInitialised.emit(graph);
+  }
+
+  private updateGraph(graph: Graph) {
+    this.renderGraph(graph, false);
+  }
+
+  private createNodeGfx(node: string, attributes: GraphNodeAttributes, positions: any, graph: Graph): void {
+    const pos = positions[node];
+    const attrs = attributes as GraphNodeAttributes;
+    // set node size
+    const radius = this.countNodeRadius(node, graph);
+    graph.setNodeAttribute(node, 'radius', radius);
+    // create node graphics / default or set by user
+    const nodeGraphic = this.nodeRenderer
+      ? this.nodeRenderer({ node, attributes: attrs, position: pos })
+      : this.defaultNodeRenderer(node, attrs, pos);
+    this.nodesContainer.addChild(nodeGraphic);
+    // add basic interactions
+    this.addNodeInteractions(nodeGraphic, node, attributes, pos);
+    
+    // save to node storage
+    this.nodeGraphicsStorage[node] = nodeGraphic;
+  }
+
+  private countNodeRadius(node: string, graph: Graph): number {
+    // TODO: better counting size based on deggre
+    const nodeCount = graph.order;
+    const edgeCount = graph.size;
+    const scalingFactor = 1 / Math.log2(nodeCount + edgeCount + 2); // +2 to avoid div by 0
+    const degree = graph.degree(node); //this.degrees[node];
+    const normalized = degree / this.maxDegree;
+   //  const minSize = Math.max(this.minSize, attributes['radius'] ? attributes['radius'] : 0);
+    const size = /* attributes && attributes['radius'] ? attributes['radius'] :  */this.minSize + (this.maxSize - this.minSize) * normalized * scalingFactor;
+    return size;
+  }
+
+  private createEdgeGfx(edge: string, attributes: GraphEdgeAttributes, source: string, target: string, positions: any, graph: Graph): void {
+    const sourcePos = positions[source];
+    const targetPos = positions[target];
+    const targetSize = graph.getNodeAttribute(target, 'radius') || 10;
+    const edgeGraphic = this.edgeRenderer
+      ? this.edgeRenderer({ edge, source, target, attributes })
+      : this.defaultEdgeRenderer(edge, attributes, sourcePos, targetPos, targetSize, graph);
+    this.edgesContainer.addChild(edgeGraphic);
+    this.edgeGraphicsStorage[edge] = edgeGraphic;
+    // interaction
+    this.addEdgeInteractions(edgeGraphic, edge, attributes, source, target);
   }
 
   private startAnimation(): void {
@@ -487,9 +576,9 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   private onDragMove(event: FederatedPointerEvent): void {
     if (this.dragTarget) {
       // console.log('dragMove', this.dragTarget);
-      const position = this.dragTarget.nodeGfx.parent.toLocal(event.global, undefined, this.dragTarget.nodeGfx.position);
-      if (this.graph) this.graph.setNodeAttribute(this.dragTarget.node, 'x', position.x /* this.dragTarget.nodeGfx.x */);
-      if (this.graph) this.graph.setNodeAttribute(this.dragTarget.node, 'y', position.y /* this.dragTarget.nodeGfx.y */);
+      const position = this.dragTarget.nodeGfx && this.dragTarget.nodeGfx.parent ? this.dragTarget.nodeGfx.parent.toLocal(event.global, undefined, this.dragTarget.nodeGfx.position) : null;
+      if (this.graph && position) this.graph.setNodeAttribute(this.dragTarget.node, 'x', position.x /* this.dragTarget.nodeGfx.x */);
+      if (this.graph && position) this.graph.setNodeAttribute(this.dragTarget.node, 'y', position.y /* this.dragTarget.nodeGfx.y */);
       // console.log('position', position);
     }
   }
