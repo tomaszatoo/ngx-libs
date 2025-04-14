@@ -1,7 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-// @tomaszatoo/graph-visualizer
+// @tomaszatoo/graph-viewer
 import { GraphViewerComponent, GraphLayoutSettings, GraphVisualizerOptions } from '@tomaszatoo/graph-viewer';
 import { Graphics } from 'pixi.js';
+// graphology
+import Graph from 'graphology';
+import florentineFamilies from 'graphology-generators/social/florentine-families';
+import clusters from 'graphology-generators/random/clusters';
+import ladder from 'graphology-generators/classic/ladder';
 
 @Component({
   selector: 'app-graph',
@@ -11,6 +16,9 @@ import { Graphics } from 'pixi.js';
   styleUrl: './graph.component.scss'
 })
 export class GraphComponent implements OnInit {
+  
+  graph!: Graph;
+  
   // Define renderers as class properties to bind via Input
   graphData = {
     nodes: [
@@ -32,6 +40,9 @@ export class GraphComponent implements OnInit {
 
   fullscreen: boolean = false;
   selectNode: string = '';
+  selectEdge: string = '';
+  hightlightNode: string = '';
+  hightlightEdge: string = ''
 
   layoutSettings: GraphLayoutSettings = {
     adjustSizes: true,
@@ -48,14 +59,48 @@ export class GraphComponent implements OnInit {
 
   constructor(
     // private graphEngine: GraphEngineService
-  ) { }
+  ) {
+    const g: Graph = ladder(Graph, 20);
+    g.forEachNode((node) => {
+      g.setNodeAttribute(node, 'label', node);
+    });
+    g.forEachEdge((edge) => {
+      g.setEdgeAttribute(edge, 'label', edge);
+    })
+    this.graph = g;
+  }
 
   ngOnInit() {
+    
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
         this.fullscreen = false;
       }
     });
+
+    setInterval(() => {
+      const nodes = this.graph.nodes();
+      const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
+      this.selectNode = randomNode;
+    }, 5000);
+
+    setInterval(() => {
+      const nodes = this.graph.nodes();
+      const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
+      this.hightlightNode = randomNode;
+    }, 2000);
+
+    setInterval(() => {
+      const edges = this.graph.edges();
+      const randomEdge = edges[this.getRandomInteger(0, edges.length)];
+      this.selectEdge = randomEdge;
+    }, 5000);
+
+    setInterval(() => {
+      const edges = this.graph.edges();
+      const randomEdge = edges[this.getRandomInteger(0, edges.length)];
+      this.hightlightEdge = randomEdge;
+    }, 2000);
 
     // setTimeout(() => {
     //   this.selectedNode = 'e';
