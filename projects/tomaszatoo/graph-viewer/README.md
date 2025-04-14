@@ -80,6 +80,15 @@ Layout tuning object—passed to ForceAtlas2. Includes:
 - edgeWeightInfluence
 - etc.
 
+### `options?: GraphVisualizerOptions`
+Low-level visual config:
+```ts
+{
+  backgroundAlpha?: number;
+  backgroundColor?: number;
+}
+```
+
 ### `toggleNodeSelection: string`
 Pass a node ID to programmatically toggle node selection.
 
@@ -92,14 +101,33 @@ Pass a node ID to programmatically toggle node highlight.
 ### `toggleEdgeHighlight: string`
 Pass a edge ID to programmatically toggle edge highlight.
 
-### `options?: GraphVisualizerOptions`
-Low-level visual config:
+---
+
+## 🔁 Dynamic Graph Mutations
+
+You can modify the graph reactively after initialization via these inputs:
+
 ```ts
-{
-  backgroundAlpha?: number;
-  backgroundColor?: number;
-}
+@Input() addNodes: Record<string, GraphNodeAttributes> | null;
 ```
+Dynamically adds nodes to the graph. The key is the node ID, and the value is its attributes.
+
+```ts
+@Input() addEdges: { source: string; target: string; attributes: GraphEdgeAttributes }[] | null;
+```
+Adds edges between existing nodes. Each object must define source, target, and attributes.
+
+```ts
+@Input() dropNodes: string[] | null;
+```
+Removes nodes by ID. Associated edges will be removed automatically.
+
+```ts
+@Input() dropEdges: string[] | null;
+```
+Removes edges by key (as defined by graphology). Use graph.edges() to list keys.
+
+
 
 ---
 
@@ -166,6 +194,10 @@ Use it in your HTML:
 ```html
 <graph-viewer
   [graphData]="myGraphData"
+  [addNodes]=“newNodesToAdd”
+  [addEdges]=“newEdgesToAdd”
+  [dropNodes]=“nodesToDrop”
+  [dropEdges]=“edgesToDrop”
   [nodeRenderer]="myCustomNodeRenderer"
   [edgeRenderer]="myCustomEdgeRenderer"
   [animate]="true"
@@ -178,6 +210,22 @@ Use it in your HTML:
   (onEdgeHighlightChange)="handleEdgeSelection($event)"
   (onDestroy)="clean()">
 </graph-viewer>
+```
+
+Then in your component:
+
+```ts
+newNodesToAdd = {
+“a”: { x: 0, y: 0, label: “Alpha” },
+“b”: { x: 10, y: 10, label: “Beta” }
+};
+
+newEdgesToAdd = [
+{ source: “a”, target: “b”, attributes: { weight: 1, label: “a → b” } }
+];
+
+nodesToDrop = [“a”];
+edgesToDrop = [“a=>b”]; // Edge keys as returned by graphology’s .edges()
 ```
 
 ---
@@ -198,6 +246,7 @@ Use it in your HTML:
 
 - [ ] Demo / Examples
 - [x] Selecting eges 
+- [ ] Error handling
 - [ ] Arrowheads and directed edges
 - [ ] Cluster folding / node collapsing
 - [ ] Tooltip system with hover delay
@@ -219,8 +268,6 @@ Use it in your HTML:
 
 - Changing `graphData` destroys/rebuilds the graph entirely.
 - ForceAtlas2 runs on the main thread—can spike with large graphs.
-- No built-in edge label support (yet).
-- Selection is node-only (no edge selection for now).
 
 ---
 
