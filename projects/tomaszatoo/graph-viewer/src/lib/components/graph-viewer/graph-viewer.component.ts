@@ -51,6 +51,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   @Output() onEdgeSelectChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() onEdgeHighlightChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() graphInitialised: EventEmitter<Graph> = new EventEmitter();
+  @Output() onDestroy: EventEmitter<boolean> = new EventEmitter();
   // @Output() onSelectionChange: EventEmitter<string[]> = new EventEmitter();
 
   // inputs
@@ -130,7 +131,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
 
   graphViewerId: string = `graph-${uuidv4()}`;
 
-  private graph!: Graph;
+  private graph!: Graph | null | undefined;
   private app!: Application;
   private viewport!: Viewport;
   private graphContainer: Container = new Container({interactive: true});
@@ -233,16 +234,9 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
       // this.viewport.zooming = false;
       // if graph, render and
       if (this.graph) {
-        this.graph.on('nodeAttributesUpdated', () => this.needsRender = true);
+        // this.graph.on('nodeAttributesUpdated', () => this.needsRender = true);
         this.renderGraph(this.graph); // move rendering here
         this.startAnimation();
-
-        // test edge select
-        // setInterval(() => {
-        //   const edges = this.graph.edges();
-        //   const randomEdge = edges[Math.floor(Math.random() * edges.length)];
-        //   this.toggleEdgeSelection(randomEdge);
-        // }, 5000);
       }
       
     });
@@ -259,17 +253,29 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
    this.containerRef.nativeElement.removeEventListener('fullscreenchange', this.fullsScreenHanlder);
+   // this.app.stage.off('pointerup', this.onDragEnd);
+   // this.app.stage.off('pointerupoutside', this.onDragEnd);
+   this.app.stage.removeAllListeners();
+   this.viewport.removeAllListeners();
    for (const id in this.edgeGraphicsStorage) {
     const edgeGfx = this.edgeGraphicsStorage[id];
-    // TODO
-    // edgeGfx.off()
+    edgeGfx.removeAllListeners();
    }
+   for (const id in this.nodeGraphicsStorage) {
+    const nodeGfx = this.nodeGraphicsStorage[id];
+    nodeGfx.removeAllListeners();
+   }
+   this.graph = null;
+   this.edgeGraphicsStorage = {};
+   this.nodeGraphicsStorage = {};
+   this.app.destroy();
+   this.onDestroy.emit(true);
   }
 
   private renderGraph(graph: Graph) {
     // count maxDegree
-    this.graph.forEachNode((node) => {
-      const degree = this.graph.degree(node); // total degree (can split in/out if needed)
+    graph.forEachNode((node) => {
+      const degree = graph.degree(node); // total degree (can split in/out if needed)
       this.degrees[node] = degree;
       if (degree > this.maxDegree) this.maxDegree = degree;
     });
@@ -280,13 +286,13 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
       const pos = positions[node];
       const attrs = attributes as GraphNodeAttributes;
       // set node size
-      const nodeCount = this.graph.order;
-      const edgeCount = this.graph.size;
+      const nodeCount = graph.order;
+      const edgeCount = graph.size;
       const scalingFactor = 1 / Math.log2(nodeCount + edgeCount + 2); // +2 to avoid div by 0
       const degree = this.degrees[node];
       const normalized = degree / this.maxDegree;
       const size = attributes && attributes['radius'] ? attributes['radius'] : this.minSize + (this.maxSize - this.minSize) * normalized * scalingFactor;
-      this.graph.setNodeAttribute(node, 'radius', size);
+      graph.setNodeAttribute(node, 'radius', size);
       // create node graphics / default or set by user
       const nodeGraphic = this.nodeRenderer
         ? this.nodeRenderer({ node, attributes: attrs, position: pos })
@@ -302,28 +308,25 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     graph.forEachEdge((edge, attributes, source, target) => {
       const sourcePos = positions[source];
       const targetPos = positions[target];
-      const targetSize = this.graph.getNodeAttribute(target, 'radius') || 10;
+      const targetSize = graph.getNodeAttribute(target, 'radius') || 10;
       const edgeGraphic = this.edgeRenderer
         ? this.edgeRenderer({ edge, source, target, attributes })
-        : this.defaultEdgeRenderer(edge, attributes, sourcePos, targetPos, targetSize);
+        : this.defaultEdgeRenderer(edge, attributes, sourcePos, targetPos, targetSize, graph);
       this.edgesContainer.addChild(edgeGraphic);
       this.edgeGraphicsStorage[edge] = edgeGraphic;
       // interaction
       this.addEdgeInteractions(edgeGraphic, edge, attributes, source, target);
     });
 
-    this.graphInitialised.emit(this.graph);
+    this.graphInitialised.emit(graph);
   }
 
   private startAnimation(): void {
     
     this.app.ticker.add((ticker: Ticker) => {
-      // console.log('app tick', this.graphViewerId);
-      // this.app.render();
-      if (this.animate && this.graph && this.needsRender) { // if needsRender not works well, but it saves power
-        // const graph = this.graphEngine.getGraph();
+      // animate only if animate true and graph present
+      if (this.animate && this.graph) { // if needsRender not works well, but it saves power
         const positions = this.graphEngine.positions(this.graph, this._layoutSettings);
-        // console.log('calculated positions', positions);
         // update nodes position
         for (const node of this.graph.nodes()) {
           // update graph
@@ -338,9 +341,6 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
             x: positions[node].x,
             y: positions[node].y
           })
-          // this.nodeGraphicsStorage[node].x = positions[node].x;
-          // this.nodeGraphicsStorage[node].y = positions[node].y;
-          // console.log(this.nodeGraphicsStorage[node].x);
         }
         // update edges position
         for (const edge of this.graph.edges()) {
@@ -375,10 +375,11 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     attributes: any,
     source: { x: number; y: number },
     target: { x: number; y: number },
-    targetSize: number
+    targetSize: number,
+    graph: Graph
   ): EdgeWrapper {
-    const s = this.graph.source(edge);
-    const t = this.graph.target(edge);
+    const s = graph.source(edge);
+    const t = graph.target(edge);
 
     const e: EdgeWrapper = new EdgeWrapper(
       edge,
@@ -487,8 +488,8 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     if (this.dragTarget) {
       // console.log('dragMove', this.dragTarget);
       const position = this.dragTarget.nodeGfx.parent.toLocal(event.global, undefined, this.dragTarget.nodeGfx.position);
-      this.graph.setNodeAttribute(this.dragTarget.node, 'x', position.x /* this.dragTarget.nodeGfx.x */);
-      this.graph.setNodeAttribute(this.dragTarget.node, 'y', position.y /* this.dragTarget.nodeGfx.y */);
+      if (this.graph) this.graph.setNodeAttribute(this.dragTarget.node, 'x', position.x /* this.dragTarget.nodeGfx.x */);
+      if (this.graph) this.graph.setNodeAttribute(this.dragTarget.node, 'y', position.y /* this.dragTarget.nodeGfx.y */);
       // console.log('position', position);
     }
   }
