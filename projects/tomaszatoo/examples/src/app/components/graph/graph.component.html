@@ -1,6 +1,6 @@
 <button (click)="toggleFullscreen()">Request Fullscreen</button>
 <graph-viewer
-    [graphData]="graph"
+    [graphData]="initialGraph"
     [animate]="true"
     [layoutSettings]="layoutSettings"
     [fullscreen]="fullscreen"
@@ -8,10 +8,16 @@
     [toggleEdgeSelection]="selectEdge"
     [toggleNodeHighlight]="hightlightNode"
     [toggleEdgeHighlight]="hightlightEdge"
+    [addNodes]="addNodes"
+    [addEdges]="addEdges"
+    [dropNodes]="dropNodes"
+    [dropEdges]="dropEdges"
     (onNodeSelectChange)="log('nodeSelectChange', $event)"
     (onNodeHighlightChange)="log('nodeHighlightChange', $event)"
     (onEdgeSelectChange)="log('edgeSelectChange', $event)"
     (onEdgeHighlightChange)="log('edgeHighlightChange', $event)"
-    (graphInitialised)="log('graph initialised', $event)"
+    (graphInitialised)="graphUpdated($event)"
+    (graphUpdated)="graphUpdated($event)"
+    (onDestroy)="log('viewer destroyed', $event)"
 ></graph-viewer>
 

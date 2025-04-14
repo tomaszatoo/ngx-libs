@@ -1,12 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 // @tomaszatoo/graph-viewer
-import { GraphViewerComponent, GraphLayoutSettings, GraphVisualizerOptions } from '@tomaszatoo/graph-viewer';
+import { GraphViewerComponent, GraphLayoutSettings, GraphVisualizerOptions, GraphNodeAttributes, GraphEdgeAttributes } from '@tomaszatoo/graph-viewer';
 import { Graphics } from 'pixi.js';
 // graphology
 import Graph from 'graphology';
 import florentineFamilies from 'graphology-generators/social/florentine-families';
 import clusters from 'graphology-generators/random/clusters';
 import ladder from 'graphology-generators/classic/ladder';
+import { v4 as uuidv4 } from 'uuid';
+// rxjs
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-graph',
@@ -17,6 +20,7 @@ import ladder from 'graphology-generators/classic/ladder';
 })
 export class GraphComponent implements OnInit {
   
+  initialGraph!: Graph;
   graph!: Graph;
   
   // Define renderers as class properties to bind via Input
@@ -42,7 +46,11 @@ export class GraphComponent implements OnInit {
   selectNode: string = '';
   selectEdge: string = '';
   hightlightNode: string = '';
-  hightlightEdge: string = ''
+  hightlightEdge: string = '';
+  addNodes: Record<string, GraphNodeAttributes> | null = null;
+  addEdges: {source: string, target: string, attributes: GraphEdgeAttributes}[] | null = null;
+  dropNodes: string[] | null = null;
+  dropEdges: string[] | null = null;
 
   layoutSettings: GraphLayoutSettings = {
     adjustSizes: true,
@@ -67,7 +75,7 @@ export class GraphComponent implements OnInit {
     g.forEachEdge((edge) => {
       g.setEdgeAttribute(edge, 'label', edge);
     })
-    this.graph = g;
+    this.initialGraph = g;
   }
 
   ngOnInit() {
@@ -79,38 +87,76 @@ export class GraphComponent implements OnInit {
     });
 
     setInterval(() => {
-      const nodes = this.graph.nodes();
-      const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
-      this.selectNode = randomNode;
+      // const nodes = [];
+      if (this.graph) {
+        const randomNode = () => {
+          return this.graph.nodes()[this.getRandomInteger(0, this.graph.nodes().length)];
+        }
+        const randomEdge = () => {
+          return this.graph.edges()[this.getRandomInteger(0, this.graph.edges().length)];
+        }
+        // dropping
+        // nodes
+        const node = randomNode();
+        this.dropNodes = null;
+        this.dropNodes = [node];
+        // edges
+        const edge = randomEdge();
+        console.log('randomEdge source', this.graph.source(edge));
+        console.log('randomEdge target', this.graph.target(edge));
+        this.dropEdges = null;
+        this.dropEdges = [edge];
+
+        // adding
+        const nodes = {};
+        const edges = [];
+        for (let i = 0; i < 5; i++) {
+          const id = uuidv4();
+
+          nodes[id as keyof Object] = { x: 1, y: 1, label: `DYN NODE`} as any;
+          edges.push({target: randomNode(), source: id, attributes: {label: 'DYN EDGE'}})
+        }
+        // console.log('temp', temp);
+        this.addNodes = nodes;
+        this.addEdges = edges;
+      
+        console.log('graph is set...');
+        
+      }
+      
+
     }, 5000);
 
-    setInterval(() => {
-      const nodes = this.graph.nodes();
-      const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
-      this.hightlightNode = randomNode;
-    }, 2000);
-
-    setInterval(() => {
-      const edges = this.graph.edges();
-      const randomEdge = edges[this.getRandomInteger(0, edges.length)];
-      this.selectEdge = randomEdge;
-    }, 5000);
-
-    setInterval(() => {
-      const edges = this.graph.edges();
-      const randomEdge = edges[this.getRandomInteger(0, edges.length)];
-      this.hightlightEdge = randomEdge;
-    }, 2000);
-
-    // setTimeout(() => {
-    //   this.selectedNode = 'e';
+    // setInterval(() => {
+    //   const nodes = this.graph.nodes();
+    //   const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
+    //   this.selectNode = randomNode;
     // }, 5000);
-    // setTimeout(() => {
-    //   this.selectedNode = 'g';
-    // }, 10000);
-    // setTimeout(() => {
-    //   this.selectedNode = 'h';
-    // }, 15000);
+// 
+    // setInterval(() => {
+    //   const nodes = this.graph.nodes();
+    //   const randomNode = nodes[this.getRandomInteger(0, nodes.length)];
+    //   this.hightlightNode = randomNode;
+    // }, 2000);
+// 
+    // setInterval(() => {
+    //   const edges = this.graph.edges();
+    //   const randomEdge = edges[this.getRandomInteger(0, edges.length)];
+    //   this.selectEdge = randomEdge;
+    // }, 5000);
+// 
+    // setInterval(() => {
+    //   const edges = this.graph.edges();
+    //   const randomEdge = edges[this.getRandomInteger(0, edges.length)];
+    //   this.hightlightEdge = randomEdge;
+    // }, 2000);
+
+  }
+
+  graphUpdated(graph: Graph): void {
+    if (this.graph) this.graph.clear();
+    this.graph = graph.copy();
+    console.log('GRAPH UPDATED', graph);
   }
 
   createNodeRenderer() {
