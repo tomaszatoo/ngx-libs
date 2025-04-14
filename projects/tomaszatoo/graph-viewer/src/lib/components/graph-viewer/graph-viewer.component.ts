@@ -20,9 +20,10 @@ import {
   NodePointerEvent,
   EdgePointerEvent,
   GraphLayoutSettings,
-  GraphVisualizerOptions
+  GraphVisualizerOptions,
+  Point,
+  GraphEdgeAttributes,
 } from '../../models/graph-types'; 
-
 // wrappers
 import { EdgeWrapper } from '../../models/edge-wrapper';
 import { NodeWrapper } from '../../models/node-wrapper';
@@ -45,12 +46,12 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   // main and only container
   @ViewChild('container') containerRef!: ElementRef;
   // output emitters
-  @Output() nodeClick: EventEmitter<NodePointerEvent> = new EventEmitter();
-  @Output() nodeOver: EventEmitter<NodePointerEvent> = new EventEmitter();
-  @Output() edgeClick: EventEmitter<EdgePointerEvent> = new EventEmitter();
-  @Output() edgeOver: EventEmitter<EdgePointerEvent> = new EventEmitter();
+  @Output() onNodeSelectChange: EventEmitter<NodePointerEvent> = new EventEmitter();
+  @Output() onNodeHighlightChange: EventEmitter<NodePointerEvent> = new EventEmitter();
+  @Output() onEdgeSelectChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
+  @Output() onEdgeHighlightChange: EventEmitter<EdgePointerEvent> = new EventEmitter();
   @Output() graphInitialised: EventEmitter<Graph> = new EventEmitter();
-  @Output() onSelectionChange: EventEmitter<string[]> = new EventEmitter();
+  // @Output() onSelectionChange: EventEmitter<string[]> = new EventEmitter();
 
   // inputs
   @Input() options: GraphVisualizerOptions = {
@@ -65,12 +66,12 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
       if (g) this.graph = g;
     }
   };
-  @Input() nodeRenderer?: (params: { node: string; attributes: GraphNodeAttributes, position: any }) => NodeWrapper;
+  @Input() nodeRenderer?: (params: { node: string; attributes: GraphNodeAttributes, position: Point }) => NodeWrapper;
   @Input() edgeRenderer?: (params: {
     edge: string;
     source: string;
     target: string;
-    attributes: any;
+    attributes: GraphEdgeAttributes;
   }) => EdgeWrapper;
 
   @Input() set fullscreen(request: boolean) {
@@ -90,11 +91,29 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     return this._fullscreen;
   }
 
-  @Input() set select(node: string | undefined | null) {
+  @Input() set toggleNodeSelection(node: string | undefined | null) {
     if (node && this.nodeGraphicsStorage[node]) {
-      this.selectNode(node);
+      this._toggleNodeSelection(node);
     }
-  } 
+  }
+
+  @Input() set toggleNodeHighlight(node: string | undefined | null) {
+    if (node && this.nodeGraphicsStorage[node]) {
+      this._toggleNodeHighlight(node);
+    }
+  }
+
+  @Input() set toggleEdgeSelection(edge: string | undefined | null) {
+    if (edge && this.edgeGraphicsStorage[edge]) {
+      this._toggleEdgeSelection(edge);
+    }
+  }
+
+  @Input() set toggleEdgeHighlight(edge: string | undefined | null) {
+    if (edge && this.edgeGraphicsStorage[edge]) {
+      this._toggleEdgeHighlight(edge);
+    }
+  }
 
   @Input() set animate(animate: boolean) {
     this._animate = animate;
@@ -120,7 +139,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   private _animate: boolean = false;
   private _fullscreen: boolean = false;
   private _layoutSettings!: GraphLayoutSettings;
-  private _selection: string[] = [];
+  // private _selection: string[] = [];
   private dragStartPos: { x: number; y: number } | null = null;
 
   
@@ -129,7 +148,13 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   private minSize = 10;
   private maxSize = 30;
 
-  private listeners: any[] = [];
+
+  private nodeGraphicsStorage: Record<string, NodeWrapper> = {};
+  private edgeGraphicsStorage: Record<string, EdgeWrapper> = {};
+
+  private dragTarget: {nodeGfx: NodeWrapper, node: string } | null = null;
+
+  private needsRender: boolean = false;
 
   constructor(
     private graphEngine: GraphEngineService
@@ -138,12 +163,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     this.graphContainer.addChild(this.nodesContainer);
   }
 
-  private nodeGraphicsStorage: any = {};
-  private edgeGraphicsStorage: any = {};
-
-  private dragTarget: {nodeGfx: Container, node: string } | null = null;
-
-  private needsRender: boolean = false;
+  
 
   ngAfterViewInit() {
     // init pixi app
@@ -221,7 +241,7 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
         // setInterval(() => {
         //   const edges = this.graph.edges();
         //   const randomEdge = edges[Math.floor(Math.random() * edges.length)];
-        //   this.selectEdge(randomEdge);
+        //   this.toggleEdgeSelection(randomEdge);
         // }, 5000);
       }
       
@@ -239,6 +259,11 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
    this.containerRef.nativeElement.removeEventListener('fullscreenchange', this.fullsScreenHanlder);
+   for (const id in this.edgeGraphicsStorage) {
+    const edgeGfx = this.edgeGraphicsStorage[id];
+    // TODO
+    // edgeGfx.off()
+   }
   }
 
   private renderGraph(graph: Graph) {
@@ -368,30 +393,42 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
   private addNodeInteractions(nodeGfx: NodeWrapper, node: string, attributes: any, position: any): void {
     nodeGfx.on('pointerup', (e: FederatedPointerEvent) => {
       if (this.isClick(e)) {
+        const selected = this._toggleNodeSelection(node);
         const nodeEvent: NodePointerEvent = {
           id: node,
           attributes: attributes,
           position: position,
-          event: e
+          event: e,
+          selected: selected
         }
-        this.selectNode(node);
-        this.nodeClick.emit(nodeEvent);
+        
+        this.onNodeSelectChange.emit(nodeEvent);
       } 
     });
 
     nodeGfx.on('pointerover', (e: FederatedPointerEvent) => {
+      nodeGfx.highlight = true;
       const nodeEvent: NodePointerEvent = {
         id: node,
         attributes: attributes,
         position: position,
-        event: e
+        event: e,
+        highlighted: true
       }
-      nodeGfx.hover = true;
-      this.nodeOver.emit(nodeEvent);
+      
+      this.onNodeHighlightChange.emit(nodeEvent);
     });
 
     nodeGfx.on('pointerout', (e: FederatedPointerEvent) => {
-      nodeGfx.hover = false;
+      nodeGfx.highlight = false;
+      const nodeEvent: NodePointerEvent = {
+        id: node,
+        attributes: attributes,
+        position: position,
+        event: e,
+        highlighted: false
+      }
+      this.onNodeHighlightChange.emit(nodeEvent);
     })
 
     // drag
@@ -401,31 +438,45 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private selectNode(node: string): void {
+  private _toggleNodeSelection(node: string): boolean {
     const nodeGfx = this.nodeGraphicsStorage[node];
-    nodeGfx.selected = !nodeGfx.selected;
+    nodeGfx.select = !nodeGfx.select;
+    return nodeGfx.select;
     // console.log('nodeGfx.selected', nodeGfx.selected);
-    if (nodeGfx.selected && !this._selection.includes(node)) {
-      const paths = singleSource(this.graph, node);
-      console.warn('TODO: ', '-> Returning every shortest path between source & every node of the graph', paths);
-      this._selection.push(node);
-      this.onSelectionChange.emit(this._selection);
-    } else {
-      if (this._selection.includes(node)) {
-        // remove from selection
-        this._selection.splice(this._selection.indexOf(node), 1);
-        this.onSelectionChange.emit(this._selection);
-      }
-    }
+    // if (nodeGfx.select && !this._selection.includes(node)) {
+    //   const paths = singleSource(this.graph, node);
+    //   console.warn('TODO: ', '-> Returning every shortest path between source & every node of the graph', paths);
+    //   this._selection.push(node);
+    //   this.onSelectionChange.emit(this._selection);
+    // } else {
+    //   if (this._selection.includes(node)) {
+    //     // remove from selection
+    //     this._selection.splice(this._selection.indexOf(node), 1);
+    //     this.onSelectionChange.emit(this._selection);
+    //   }
+    // }
   }
 
-  private selectEdge(edge: string): void {
+  private _toggleNodeHighlight(node: string): boolean {
+    const nodeGfx = this.nodeGraphicsStorage[node];
+    nodeGfx.highlight = !nodeGfx.highlight;
+    return nodeGfx.highlight;
+  }
+
+  private _toggleEdgeSelection(edge: string): boolean {
     const edgeGfx = this.edgeGraphicsStorage[edge];
-    edgeGfx.selected = !edgeGfx.selected;
+    edgeGfx.select = !edgeGfx.select;
+    return edgeGfx.select;
+  }
+
+  private _toggleEdgeHighlight(edge: string): boolean {
+    const edgeGfx = this.edgeGraphicsStorage[edge];
+    edgeGfx.highlight = !edgeGfx.highlight;
+    return edgeGfx.highlight;
   }
 
   // dragging nodes
-  private onDragStart(nodeGfx: Container, node: string): void {
+  private onDragStart(nodeGfx: NodeWrapper, node: string): void {
     this.dragTarget = {nodeGfx: nodeGfx, node: node};
     // console.log('dragStart', this.dragTarget);
     this.viewport.plugins.pause('drag');
@@ -450,26 +501,42 @@ export class GraphViewerComponent implements AfterViewInit, OnDestroy {
     this.dragTarget = null;
   }
 
-  private addEdgeInteractions(edgeGfx: Container, edge: string, attributes: any, source: string, target: string): void {
+  private addEdgeInteractions(edgeGfx: EdgeWrapper, edge: string, attributes: any, source: string, target: string): void {
     edgeGfx.on('click', (e: FederatedPointerEvent) => {
+      const selected = this._toggleEdgeSelection(edge);
       const edgeEvent: EdgePointerEvent = {
         id: edge,
         attributes: attributes,
         source: source,
         target: target,
-        event: e
+        event: e,
+        selected: selected
       }
-      this.edgeClick.emit(edgeEvent);
+      this.onEdgeSelectChange.emit(edgeEvent);
     });
     edgeGfx.on('pointerover', (e: FederatedPointerEvent) => {
+      edgeGfx.highlight = true; 
       const edgeEvent: EdgePointerEvent = {
         id: edge,
         attributes: attributes,
         source: source,
         target: target,
-        event: e
+        event: e,
+        highlighted: true
       }
-      this.edgeOver.emit(edgeEvent);
+      this.onEdgeHighlightChange.emit(edgeEvent);
+    });
+    edgeGfx.on('pointerout', (e: FederatedPointerEvent) => {
+      edgeGfx.highlight = false;
+      const edgeEvent: EdgePointerEvent = {
+        id: edge,
+        attributes: attributes,
+        source: source,
+        target: target,
+        event: e,
+        highlighted: false
+      }
+      this.onEdgeHighlightChange.emit(edgeEvent);
     })
   }
 
